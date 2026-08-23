@@ -50,8 +50,13 @@ def init_db():
     
     # Standart reklama va matnlar
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_username', '@reklamuchun1')")
-    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_text', '🔥 **ZAYAFKA KANALLARGA ZAKAZ OLAMAN!**\n\nKanalga odam kerakmi? Unda yozing 👇\n👥 Jivoy, aktiv auditoriya\n⚡ Tez va sifatli ishlaymiz\n💸 Narxlar hamyonbop\n📈 Kanalni tezroq o\\'stirishga yordam beramiz\n\n1000 ta zayafka — kelishilgan narxda ✅\nKo\\'p miqdorga alohida skidka bor 💥\n\n📬 Zakaz uchun lichkaga yozing')")
-    conn.commit()
+     conn.commit()
+cursor.execute(
+    """
+    INSERT OR IGNORE INTO settings (key, value) 
+    VALUES ('ad_text', '🔥 **ZAYAFKA KANALLARGA ZAKAZ OLAMAN!**\n\nKanalga odam kerakmi? Unda yozing ↘️👇 Jivoy, aktiv auditoriya\n⚡️ Tez va sifatli ishlaymiz\n📈 Narxlar hamyonbop\n📊 Kanalni tezroq o''stirishga yordam beramiz\n\n1000 ta zayafka - kelishilgan narxda ✅\nKo''p miqdorga alohida skidka bor 💥\n\n👉 Zakaz uchun lichkaga yozing')
+    """
+)
 
     cursor.execute('SELECT COUNT(*) FROM channels')
     if cursor.fetchone()[0] == 0:
