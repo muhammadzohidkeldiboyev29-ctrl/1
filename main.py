@@ -1,3 +1,4 @@
+
 from datetime import datetime
 import random
 import sqlite3
@@ -450,4 +451,4 @@ def handle_text_codes(message):
     send_movie_by_code(message.chat.id, message.from_user.id, message.text.strip())
 
 @bot.message_handler(func=lambda m: m.text in ["💡 Kino tavsiya", "💡 Предложить", "💡 Suggest"])
-def suggest_movie(message):
+def suggest
