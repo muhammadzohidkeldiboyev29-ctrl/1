@@ -10,7 +10,6 @@ BOT_USERNAME = "Kinolarqbot"
 
 bot = telebot.TeleBot(TOKEN)
 user_states = {}
-
 DB_NAME = "bot_database.db"
 
 
@@ -226,10 +225,13 @@ def callback_sub(call):
     )
 
 
-@bot.message_handler(
-    func=lambda m: m.text == "📊 Statistika" and m.from_user.id == ADMIN_ID
-)
+# --- MENYU TUGMALARI VA ADMIN FUNKSIYALARI ---
+
+
+@bot.message_handler(func=lambda m: m.text == "📊 Statistika")
 def stats(m):
+  if m.from_user.id != ADMIN_ID:
+    return
   conn = get_db()
   c = conn.cursor()
   c.execute("SELECT COUNT(*) FROM users")
@@ -241,13 +243,69 @@ def stats(m):
   conn.close()
   bot.reply_to(
       m,
-      f"📊 Statistika:\nFoydalanuvchilar: {u}\nVIP'lar: {v}\nKinolar: {mv}",
+      f"📊 Statistika:\n👥 Foydalanuvchilar: {u}\n💎 VIP'lar: {v}\n🎬 Kinolar:"
+      f" {mv}",
+  )
+
+
+@bot.message_handler(func=lambda m: m.text == "🎬 Kino yuklash")
+def start_add_movie(m):
+  if m.from_user.id != ADMIN_ID:
+    return
+  user_states[m.from_user.id] = {"state": "waiting_for_movie"}
+  bot.reply_to(
+      m,
+      "🎬 Iltimos, bazaga qo'shmoqchi bo'lgan **kinoni (videoni) yuboring**:",
   )
 
 
 @bot.message_handler(
-    func=lambda m: m.text == "🎲 Tasodifiy"
+    content_types=["video"],
+    func=lambda m: m.from_user.id == ADMIN_ID
+    and user_states.get(m.from_user.id, {}).get("state")
+    == "waiting_for_movie",
 )
+def get_movie_video(m):
+  video_id = m.video.file_id
+  user_states[m.from_user.id] = {
+      "state": "waiting_for_code",
+      "video_id": video_id,
+  }
+  bot.reply_to(
+      m,
+      "✅ Video qabul qilindi!\n\nEndi ushbu kino uchun **raqamli yoki harfli"
+      " kod** yuboring (masalan: `12` yoki `kino1`):",
+  )
+
+
+@bot.message_handler(
+    func=lambda m: m.from_user.id == ADMIN_ID
+    and user_states.get(m.from_user.id, {}).get("state")
+    == "waiting_for_code"
+)
+def get_movie_code(m):
+  code = m.text.strip()
+  video_id = user_states[m.from_user.id].get("video_id")
+
+  conn = get_db()
+  cursor = conn.cursor()
+  try:
+    cursor.execute(
+        "INSERT OR REPLACE INTO movies (code, video_id, is_vip, downloads)"
+        " VALUES (?, ?, 0, 0)",
+        (code, video_id),
+    )
+    conn.commit()
+    conn.close()
+    bot.reply_to(
+        m, f"🎉 Kino muvaffaqiyatli saqlandi!\n🎬 Kodi: `{code}`", parse_mode="Markdown"
+    )
+  except Exception as e:
+    bot.reply_to(m, f"❌ Xatolik yuz berdi: {e}")
+  user_states[m.from_user.id] = {}
+
+
+@bot.message_handler(func=lambda m: m.text == "🎲 Tasodifiy")
 def random_m(message):
   conn = get_db()
   c = conn.cursor()
@@ -273,9 +331,7 @@ def random_m(message):
           "📢 Reklama",
           url=f"https://t.me/{get_setting('ad_username').replace('@', '')}",
       ),
-      types.InlineKeyboardButton(
-          "💎 VIP", callback_data="btn_vip_menu"
-      ),
+      types.InlineKeyboardButton("💎 VIP", callback_data="btn_vip_menu"),
   )
   bot.send_video(
       message.chat.id,
@@ -292,6 +348,68 @@ def random_m(message):
 @bot.message_handler(func=lambda m: m.text == "🔍 Qidirish")
 def search(m):
   bot.send_message(m.chat.id, "🔎 Kino kodini yuboring (masalan: `1`):")
+
+
+@bot.message_handler(func=lambda m: m.text == "💎 Premium Obuna")
+def vip_menu(m):
+  bot.send_message(
+      m.chat.id,
+      "💎 **VIP Premium Obuna**\n\nVIP foydalanuvchilar barcha yopiq kinolardan"
+      " cheklovsiz foydalanishadi va reklamasiz ko'rishadi!\n\nObuna bo'lish"
+      " uchun adminga murojaat qiling: "
+      f"[@{bot.get_me().username}](tg://user?id={ADMIN_ID})",
+      parse_mode="Markdown",
+  )
+
+
+@bot.message_handler(func=lambda m: m.text == "📢 Reklama")
+def ad_info(m):
+  bot.send_message(m.chat.id, get_setting("ad_text"), parse_mode="Markdown")
+
+
+@bot.message_handler(func=lambda m: m.text == "🤖 Bot holati")
+def bot_status(m):
+  if m.from_user.id != ADMIN_ID:
+    return
+  bot.reply_to(m, "🤖 Bot holati: Ajoyib ishlamoqda, server yoniq! ✅")
+
+
+@bot.message_handler(func=lambda m: m.text == "📢 Kanallarni sozlash")
+def config_channels(m):
+  if m.from_user.id != ADMIN_ID:
+    return
+  ch_list = "\n".join(get_current_channels())
+  bot.reply_to(m, f"📢 Hozirgi majburiy kanallar:\n{ch_list}")
+
+
+# Barcha boshqa matnlar kino kodi sifatida qidiriladi
+@bot.message_handler(
+    func=lambda m: m.text
+    and not m.text.startswith("/")
+    and m.text
+    not in [
+        "📊 Statistika",
+        "🎲 Tasodifiy",
+        "🔍 Qidirish",
+        "💎 Premium Obuna",
+        "📢 Reklama",
+        "💡 Kino tavsiya qilish",
+        "📬 Shaxsiy kino qo'shish",
+        "🎬 Admin orqali kino qo'shish",
+        "🤖 Bot holati",
+        "📢 Kanallarni sozlash",
+        "⚙️ Reklamani o'zgartirish",
+        "📢 Xabar yuborish (Reklama)",
+        "🎬 Kino yuklash",
+        "➕ Kanal qo'shish",
+        "🗑 Kanalni o'chirish",
+        "🚫 VIP'dan chiqarish",
+        "🗑 Kino o'chirish",
+    ]
+)
+def handle_text_codes(message):
+  code = message.text.strip()
+  send_movie_by_code(message.chat.id, message.from_user.id, code)
 
 
 def send_movie_by_code(chat_id, user_id, code):
@@ -329,9 +447,7 @@ def send_movie_by_code(chat_id, user_id, code):
           "📢 Reklama",
           url=f"https://t.me/{get_setting('ad_username').replace('@', '')}",
       ),
-      types.InlineKeyboardButton(
-          "💎 VIP", callback_data="btn_vip_menu"
-      ),
+      types.InlineKeyboardButton("💎 VIP", callback_data="btn_vip_menu"),
   )
   bot.send_video(
       chat_id,
@@ -347,4 +463,4 @@ def send_movie_by_code(chat_id, user_id, code):
 
 if __name__ == "__main__":
   bot.infinity_polling()
-  
+    
