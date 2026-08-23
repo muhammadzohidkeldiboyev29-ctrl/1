@@ -1,4 +1,3 @@
-
 from datetime import datetime
 import random
 import sqlite3
@@ -21,7 +20,6 @@ LANG_TEXTS = {
         "vip_btn": "💎 Premium Obuna",
         "lang_btn": "🌐 Tilni o'zgartirish",
         "ad_btn": "📢 Reklama",
-        "suggest_btn": "💡 Kino tavsiya",
         "stats_btn": "📊 Statistika",
         "add_movie_btn": "🎬 Kino qo'shish",
         "add_vip_movie_btn": "💎 VIP kino qo'shish",
@@ -44,7 +42,6 @@ LANG_TEXTS = {
         "vip_btn": "💎 VIP Подписка",
         "lang_btn": "🌐 Сменить язык",
         "ad_btn": "📢 Реклама",
-        "suggest_btn": "💡 Предложить",
         "stats_btn": "📊 Статистика",
         "add_movie_btn": "🎬 Добавить фильм",
         "add_vip_movie_btn": "💎 Добавить VIP",
@@ -67,7 +64,6 @@ LANG_TEXTS = {
         "vip_btn": "💎 VIP Subscription",
         "lang_btn": "🌐 Language",
         "ad_btn": "📢 Ads",
-        "suggest_btn": "💡 Suggest",
         "stats_btn": "📊 Statistics",
         "add_movie_btn": "🎬 Add Movie",
         "add_vip_movie_btn": "💎 Add VIP",
@@ -180,7 +176,7 @@ def show_main_menu(chat_id, user_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     markup.row(t["search_btn"], t["random_btn"])
     markup.row(t["vip_btn"], t["lang_btn"])
-    markup.row(t["ad_btn"], t["suggest_btn"])
+    markup.row(t["ad_btn"])
     
     if user_id == ADMIN_ID:
         markup.row(t["stats_btn"], t["status_btn"])
@@ -440,8 +436,7 @@ EXCLUDED_BTNS = [
     "🔍 Qidirish", "🔍 Поиск", "🔍 Search", "💎 Premium Obuna", "💎 VIP Подписка", "💎 VIP Subscription",
     "📢 Reklama", "📢 Реклама", "📢 Ads", "🌐 Tilni o'zgartirish", "🌐 Сменить язык", "🌐 Language",
     "🎬 Kino qo'shish", "💎 VIP kino qo'shish", "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status", 
-    "🗑 O'chirish", "📢 Majburiy obuna", "📢 Обязательная подписка", "📢 Force Subscription",
-    "💡 Kino tavsiya", "💡 Предложить", "💡 Suggest"
+    "🗑 O'chirish", "📢 Majburiy obuna", "📢 Обязательная подписка", "📢 Force Subscription"
 ]
 
 @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/') and m.text not in EXCLUDED_BTNS)
@@ -450,5 +445,11 @@ def handle_text_codes(message):
         return
     send_movie_by_code(message.chat.id, message.from_user.id, message.text.strip())
 
-@bot.message_handler(func=lambda m: m.text in ["💡 Kino tavsiya", "💡 Предложить", "💡 Suggest"])
-def suggest
+def send_movie_by_code(chat_id, user_id, code):
+    lang = get_user_lang(user_id)
+    t = LANG_TEXTS[lang]
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT video_id, is_vip, downloads FROM movies WHERE code = ?", (code,))
+    movie = c.fetchone()
+    c.execute("SELECT is_vip FROM users WHERE user_id 
