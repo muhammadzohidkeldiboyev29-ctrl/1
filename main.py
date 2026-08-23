@@ -31,7 +31,7 @@ LANG_TEXTS = {
         "channels_btn": "📢 Kanallarni sozlash",
         "add_channel_btn": "➕ Kanal qo'shish",
         "del_channel_btn": "🗑 Kanalni o'chirish",
-        "remove_vip_btn": "🚫 VIP'dan chiqarish",
+        "remove_vip_btn": "🚫 VIPdan chiqarish",
         "search_prompt": "🔎 Kino kodini yuboring (masalan: `1`):",
         "movie_not_found": "❌ `{code}` kodi topilmadi.",
         "movies_not_found": "❌ Kinolar topilmadi.",
@@ -435,7 +435,7 @@ def search(m):
     lang = get_user_lang(m.from_user.id)
     bot.send_message(m.chat.id, LANG_TEXTS[lang]["search_prompt"])
 
-@bot.message_handler(func=lambda m: m.text and not m.text.startswith('/') and m.text not in [
+ADMIN_BTN_LIST = [
     "📊 Statistika", "📊 Статистика", "📊 Statistics",
     "🎲 Tasodifiy", "🎲 Случайный", "🎲 Random",
     "🔍 Qidirish", "🔍 Поиск", "🔍 Search",
@@ -445,4 +445,5 @@ def search(m):
     "💡 Kino tavsiya qilish", "💡 Предложить фильм", "💡 Suggest Movie",
     "🎬 Oddiy kino qo'shish", "💎 VIP kino qo'shish",
     "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status",
-    "🗑 Kino o'
+    "🗑 Kino o'chirish", "⚙️ Reklamani o'zgartirish",
+    "📢 Kanallarni sozlash", "➕ Kanal
