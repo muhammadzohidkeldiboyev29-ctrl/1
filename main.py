@@ -4,7 +4,7 @@ import sqlite3
 import telebot
 from telebot import types
 
-TOKEN = "8816940858:AAEwDQ94ues00rcG1RVkNMPumQh7Xxgfowc"
+TOKEN = "8816940858:AAF2AdMub0XRMqBOYeyyPyjNbwZDShjEy9o"
 ADMIN_ID = 8753350906
 BOT_USERNAME = "Kinolarqbot"
 
@@ -319,10 +319,8 @@ def admin_actions(m):
     active_users = 0
     blocked_users = 0
 
-    # Faollar va chiqib ketganlarni tekshirish
     for (u_id,) in all_users:
       try:
-        # Chat holatini so'rab ko'ramiz (agar botni bloklagan bo'lsa xato beradi)
         bot.send_chat_action(u_id, "typing")
         active_users += 1
       except:
@@ -555,4 +553,4 @@ def send_movie_by_code(chat_id, user_id, code):
 
 if __name__ == "__main__":
   bot.infinity_polling()
-  
+    
