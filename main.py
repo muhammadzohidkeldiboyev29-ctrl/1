@@ -617,11 +617,9 @@ def random_movie(message):
     )
 
     markup = types.InlineKeyboardMarkup()
+    url_link = f"https://t.me/{ad_user.replace('@', '')}"
     markup.row(
-        types.InlineKeyboardButton(
-            "📢 Reklama / Zakaz",
-            url=f"https://t.me/{ad_user.replace('@', '')}",
-        ),
+        types.InlineKeyboardButton("📢 Reklama / Zakaz", url=url_link),
         types.InlineKeyboardButton(
             "💎 Premium obuna", callback_data="btn_vip_menu"
         ),
@@ -699,6 +697,6 @@ def send_movie_by_code(chat_id, user_id, code):
     )
 
     markup = types.InlineKeyboardMarkup()
+    url_link = f"https://t.me/{ad_user.replace('@', '')}"
     markup.row(
-        types.InlineKeyboardButton(
-            "📢 Reklama / Zakaz"
+        types.InlineK
