@@ -26,12 +26,15 @@ LANG_TEXTS = {
         "add_vip_movie_btn": "💎 VIP kino qo'shish",
         "status_btn": "🤖 Bot holati",
         "del_movie_btn": "🗑 O'chirish",
+        "force_sub_btn": "📢 Majburiy obuna",
         "search_prompt": "🔎 Kino kodini yuboring (masalan: `1`):",
         "movie_not_found": "❌ `{code}` kodi topilmadi.",
         "movies_not_found": "❌ Kinolar topilmadi.",
         "download_count": "⬇️ Yuklangan:",
         "vip_choose_period": "💎 **VIP Premium Obuna**\n\nMuddatni tanlang:",
         "bot_status_ok": "🤖 Bot holati: Ajoyib ishlamoqda ✅",
+        "sub_required": "⚠️ Botdan foydalanish uchun quyidagi kanalga obuna bo'ling:",
+        "sub_check": "✅ Obunani tekshirish"
     },
     "ru": {
         "menu": "✅ Главное меню:",
@@ -46,12 +49,15 @@ LANG_TEXTS = {
         "add_vip_movie_btn": "💎 Добавить VIP",
         "status_btn": "🤖 Статус бота",
         "del_movie_btn": "🗑 Удалить",
+        "force_sub_btn": "📢 Обязательная подписка",
         "search_prompt": "🔎 Отправьте код фильма (например: `1`):",
         "movie_not_found": "❌ Код `{code}` не найден.",
         "movies_not_found": "❌ Фильмы не найдены.",
         "download_count": "⬇️ Скачано:",
         "vip_choose_period": "💎 **VIP Премиум Подписка**\n\nВыберите срок:",
         "bot_status_ok": "🤖 Статус бота: Работает отлично ✅",
+        "sub_required": "⚠️ Для использования бота подпишитесь на канал:",
+        "sub_check": "✅ Проверить подписку"
     },
     "en": {
         "menu": "✅ Main menu:",
@@ -66,12 +72,15 @@ LANG_TEXTS = {
         "add_vip_movie_btn": "💎 Add VIP",
         "status_btn": "🤖 Bot Status",
         "del_movie_btn": "🗑 Delete",
+        "force_sub_btn": "📢 Force Subscription",
         "search_prompt": "🔎 Send movie code (e.g., `1`):",
         "movie_not_found": "❌ Code `{code}` not found.",
         "movies_not_found": "❌ No movies found.",
         "download_count": "⬇️ Downloads:",
         "vip_choose_period": "💎 **VIP Premium Subscription**\n\nSelect period:",
         "bot_status_ok": "🤖 Bot Status: Working perfectly ✅",
+        "sub_required": "⚠️ Please subscribe to our channel to use the bot:",
+        "sub_check": "✅ Check subscription"
     }
 }
 
@@ -97,6 +106,7 @@ def init_db():
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('admin_contact', '@mhdnvwv')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('card_number', '6262 5701 4806 4381 (Obidjonova M)')")
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('ad_text', '🔥 **REKLAMA JOYI**\\n\\nMurojaat uchun: @mhdnvwv')")
+    cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('force_channel', '')")
     conn.commit()
     conn.close()
 
@@ -113,6 +123,13 @@ def get_setting(key):
     conn.close()
     return row[0] if row else ""
 
+def set_setting(key, value):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
+    conn.commit()
+    conn.close()
+
 def get_user_lang(user_id):
     conn = get_db()
     cursor = conn.cursor()
@@ -128,17 +145,32 @@ def set_user_lang(user_id, lang):
     conn.commit()
     conn.close()
 
+def check_forced_subscription(user_id):
+    channel = get_setting('force_channel')
+    if not channel:
+        return True
+    try:
+        member = bot.get_chat_member(channel, user_id)
+        if member.status in ['member', 'administrator', 'creator']:
+            return True
+    except:
+        pass
+    return False
+
 def show_vip_keyboard(lang):
     markup = types.InlineKeyboardMarkup()
     if lang == 'uz':
         markup.row(types.InlineKeyboardButton("1 oy — 15,000 so'm", callback_data="vip_uz_1"))
         markup.row(types.InlineKeyboardButton("3 oy — 20,000 so'm", callback_data="vip_uz_3"))
+        markup.row(types.InlineKeyboardButton("6 oy — 35,000 so'm", callback_data="vip_uz_6"))
     elif lang == 'ru':
         markup.row(types.InlineKeyboardButton("1 месяц — 200 руб", callback_data="vip_ru_1"))
         markup.row(types.InlineKeyboardButton("3 месяца — 250 руб", callback_data="vip_ru_3"))
+        markup.row(types.InlineKeyboardButton("6 месяцев — 450 руб", callback_data="vip_ru_6"))
     else:
         markup.row(types.InlineKeyboardButton("1 month — $12", callback_data="vip_en_1"))
         markup.row(types.InlineKeyboardButton("3 months — $15", callback_data="vip_en_3"))
+        markup.row(types.InlineKeyboardButton("6 months — $25", callback_data="vip_en_6"))
     return markup
 
 def show_main_menu(chat_id, user_id):
@@ -152,7 +184,7 @@ def show_main_menu(chat_id, user_id):
     if user_id == ADMIN_ID:
         markup.row(t["stats_btn"], t["status_btn"])
         markup.row(t["add_movie_btn"], t["add_vip_movie_btn"])
-        markup.row(t["del_movie_btn"])
+        markup.row(t["force_sub_btn"], t["del_movie_btn"])
         
     bot.send_message(chat_id, t["menu"], reply_markup=markup)
 
@@ -166,6 +198,16 @@ def send_welcome(message):
     conn.commit()
     conn.close()
     
+    if not check_forced_subscription(user_id):
+        lang = get_user_lang(user_id)
+        t = LANG_TEXTS[lang]
+        channel = get_setting('force_channel')
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton("Obuna bo'lish ➡️", url=f"https://t.me/{channel.replace('@', '')}"))
+        markup.row(types.InlineKeyboardButton(t["sub_check"], callback_data="check_sub"))
+        bot.send_message(message.chat.id, t["sub_required"], reply_markup=markup)
+        return
+
     if message.text and message.text.startswith('/start kino_'):
         send_movie_by_code(message.chat.id, user_id, message.text.split('_')[1])
         return
@@ -177,6 +219,18 @@ def send_welcome(message):
         types.InlineKeyboardButton("🇬🇧 English", callback_data="lang_en")
     )
     bot.send_message(message.chat.id, "🌍 Tilni tanlang / Выберите язык:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data == 'check_sub')
+def callback_check_sub(call):
+    if check_forced_subscription(call.from_user.id):
+        bot.answer_callback_query(call.id, "Rahmat! Obuna tasdiqlandi ✅")
+        try:
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+        except:
+            pass
+        show_main_menu(call.message.chat.id, call.from_user.id)
+    else:
+        bot.answer_callback_query(call.id, "Siz hali kanalga obuna bo'lmadingiz! ❌", show_alert=True)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('lang_'))
 def callback_language(call):
@@ -258,7 +312,9 @@ def ad_info(m):
     "📊 Statistika", "📊 Статистика", "📊 Statistics",
     "🎬 Kino qo'shish", "🎬 Добавить фильм", "🎬 Add Movie",
     "💎 VIP kino qo'shish", "💎 Добавить VIP", "💎 Add VIP",
-    "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status"
+    "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status",
+    "📢 Majburiy obuna", "📢 Обязательная подписка", "📢 Force Subscription",
+    "🗑 O'chirish"
 ])
 def admin_actions(m):
     lang = get_user_lang(m.from_user.id)
@@ -275,14 +331,48 @@ def admin_actions(m):
         m_count = c.fetchone()[0]
         conn.close()
         bot.reply_to(m, f"📊 Statistika:\n👥 Userlar: {u_count}\n💎 VIP: {v_count}\n🎬 Kinolar: {m_count}")
-    elif "Oddiy" in m.text or "Добавить фильм" in m.text or "Add Movie" in m.text or "Kino qo'shish" in m.text:
+    elif "Kino qo'shish" in m.text or "Добавить фильм" in m.text or "Add Movie" in m.text:
         user_states[m.from_user.id] = {'state': 'waiting_for_movie', 'is_vip': 0}
         bot.reply_to(m, "🎬 Oddiy kino videosini yuboring:")
     elif "VIP kino" in m.text or "Добавить VIP" in m.text:
         user_states[m.from_user.id] = {'state': 'waiting_for_movie', 'is_vip': 1}
         bot.reply_to(m, "💎 VIP kino videosini yuboring:")
+    elif "Majburiy obuna" in m.text or "Обязательная подписка" in m.text or "Force Subscription" in m.text:
+        markup = types.InlineKeyboardMarkup()
+        markup.row(types.InlineKeyboardButton("❌ O'chirish", callback_data="forcesub_remove"))
+        user_states[m.from_user.id] = {'state': 'waiting_for_force_sub'}
+        bot.reply_to(m, "📢 Majburiy obuna uchun kanal usernamesini yuboring (masalan: `@kanal_nomi`):", reply_markup=markup)
     elif "Bot holati" in m.text or "Статус" in m.text:
         bot.reply_to(m, t["bot_status_ok"])
+    elif "O'chirish" in m.text:
+        user_states[m.from_user.id] = {'state': 'waiting_for_del_code'}
+        bot.reply_to(m, "🗑 O'chirilishi kerak bo'lgan kino kodini yuboring:")
+
+@bot.callback_query_handler(func=lambda call: call.data == 'forcesub_remove')
+def forcesub_remove(call):
+    if call.from_user.id != ADMIN_ID:
+        return
+    set_setting('force_channel', '')
+    bot.answer_callback_query(call.id, "Majburiy obuna o'chirildi! ✅")
+    bot.edit_message_text("❌ Majburiy obuna muvaffaqiyatli olib tashlandi.", call.message.chat.id, call.message.message_id)
+
+@bot.message_handler(func=lambda m: m.from_user.id == ADMIN_ID and user_states.get(m.from_user.id, {}).get('state') == 'waiting_for_force_sub')
+def set_force_channel(m):
+    channel = m.text.strip()
+    set_setting('force_channel', channel)
+    bot.reply_to(m, f"✅ Majburiy obuna kanali sozlandi: `{channel}`", parse_mode="Markdown")
+    user_states[m.from_user.id] = {}
+
+@bot.message_handler(func=lambda m: m.from_user.id == ADMIN_ID and user_states.get(m.from_user.id, {}).get('state') == 'waiting_for_del_code')
+def delete_movie(m):
+    code = m.text.strip()
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("DELETE FROM movies WHERE code = ?", (code,))
+    conn.commit()
+    conn.close()
+    bot.reply_to(m, f"🗑 `{code}` kodi o'chirildi!", parse_mode="Markdown")
+    user_states[m.from_user.id] = {}
 
 @bot.message_handler(content_types=['video'], func=lambda m: m.from_user.id == ADMIN_ID and user_states.get(m.from_user.id, {}).get('state') == 'waiting_for_movie')
 def get_movie_video(m):
@@ -306,6 +396,8 @@ def get_movie_code(m):
 @bot.message_handler(func=lambda m: m.text in ["🎲 Tasodifiy", "🎲 Случайный", "🎲 Random"])
 def random_m(message):
     user_id = message.from_user.id
+    if not check_forced_subscription(user_id):
+        return
     lang = get_user_lang(user_id)
     t = LANG_TEXTS[lang]
     conn = get_db()
@@ -332,10 +424,13 @@ def random_m(message):
     conn.commit()
     conn.close()
     
-    bot.send_video(message.chat.id, video_id, caption=f"🎬 Kod: `{code}`\n\n{t['download_count']} {downloads + 1}", parse_mode="Markdown")
+    caption = f"🎬 Kod: `{code}`\n\n{t['download_count']} {downloads + 1}\n\n💬 Murojaat va jonli obzorlar uchun: @mhdnvwv"
+    bot.send_video(message.chat.id, video_id, caption=caption, parse_mode="Markdown")
 
 @bot.message_handler(func=lambda m: m.text in ["🔍 Qidirish", "🔍 Поиск", "🔍 Search"])
 def search(m):
+    if not check_forced_subscription(m.from_user.id):
+        return
     lang = get_user_lang(m.from_user.id)
     bot.send_message(m.chat.id, LANG_TEXTS[lang]["search_prompt"])
 
@@ -343,44 +438,16 @@ EXCLUDED_BTNS = [
     "📊 Statistika", "📊 Статистика", "📊 Statistics", "🎲 Tasodifiy", "🎲 Случайный", "🎲 Random",
     "🔍 Qidirish", "🔍 Поиск", "🔍 Search", "💎 Premium Obuna", "💎 VIP Подписка", "💎 VIP Subscription",
     "📢 Reklama", "📢 Реклама", "📢 Ads", "🌐 Tilni o'zgartirish", "🌐 Сменить язык", "🌐 Language",
-    "🎬 Kino qo'shish", "💎 VIP kino qo'shish", "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status", "🗑 O'chirish"
+    "🎬 Kino qo'shish", "💎 VIP kino qo'shish", "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status", 
+    "🗑 O'chirish", "📢 Majburiy obuna", "📢 Обязательная подписка", "📢 Force Subscription",
+    "💡 Kino tavsiya", "💡 Предложить", "💡 Suggest"
 ]
 
 @bot.message_handler(func=lambda m: m.text and not m.text.startswith('/') and m.text not in EXCLUDED_BTNS)
 def handle_text_codes(message):
+    if not check_forced_subscription(message.from_user.id):
+        return
     send_movie_by_code(message.chat.id, message.from_user.id, message.text.strip())
 
-def send_movie_by_code(chat_id, user_id, code):
-    lang = get_user_lang(user_id)
-    t = LANG_TEXTS[lang]
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("SELECT video_id, is_vip, downloads FROM movies WHERE code = ?", (code,))
-    movie = c.fetchone()
-    c.execute("SELECT is_vip FROM users WHERE user_id = ?", (user_id,))
-    u_row = c.fetchone()
-    conn.close()
-    
-    if not movie:
-        bot.send_message(chat_id, t["movie_not_found"].format(code=code), parse_mode="Markdown")
-        return
-        
-    video_id, is_vip, downloads = movie
-    is_user_vip = u_row[0] if u_row else 0
-    
-    if is_vip == 1 and is_user_vip == 0 and user_id != ADMIN_ID:
-        markup = show_vip_keyboard(lang)
-        bot.send_message(chat_id, "❌ Bu kino faqat VIP obunachilar uchun!", reply_markup=markup)
-        return
-        
-    conn = get_db()
-    c = conn.cursor()
-    c.execute("UPDATE movies SET downloads = downloads + 1 WHERE code = ?", (code,))
-    conn.commit()
-    conn.close()
-    
-    bot.send_video(chat_id, video_id, caption=f"🎬 Kod: `{code}`\n\n{t['download_count']} {downloads + 1}", parse_mode="Markdown")
-
-if __name__ == "__main__":
-    bot.infinity_polling()
-    
+@bot.message_handler(func=lambda m: m.text in ["💡 Kino tavsiya", "💡 Предложить", "💡 Suggest"])
+def suggest_movie(message):
