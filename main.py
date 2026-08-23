@@ -465,4 +465,4 @@ def send_movie_by_code(chat_id, user_id, code):
     else:
         bot.send_message(chat_id, f"❌ `{code}` kodi bo'yicha hech qanday kino topilmadi.", parse_mode="Markdown")
 
-@bo
+
