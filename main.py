@@ -1,6 +1,8 @@
 from datetime import datetime
 import random
 import sqlite3
+from threading import Thread
+from flask import Flask
 import telebot
 from telebot import types
 
@@ -11,6 +13,21 @@ BOT_USERNAME = "Kinolarqbot"
 bot = telebot.TeleBot(TOKEN)
 user_states = {}
 DB_NAME = "bot_database.db"
+
+# --- RENDER 24/7 UCHUN FLASK SERVER ---
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running 24/7!"
+
+def run_web():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = Thread(target=run_web)
+    t.start()
+# -------------------------------------
 
 LANG_TEXTS = {
     "uz": {
@@ -124,9 +141,9 @@ def set_user_lang(user_id, lang):
 def show_vip_keyboard(lang):
     markup = types.InlineKeyboardMarkup()
     if lang == 'uz':
-        markup.row(types.InlineKeyboardButton("1 oy — 15,000 so'm", callback_data="vip_uz_1"))
-        markup.row(types.InlineKeyboardButton("3 oy — 20,000 so'm", callback_data="vip_uz_3"))
-        markup.row(types.InlineKeyboardButton("6 oy — 35,000 so'm", callback_data="vip_uz_6"))
+        markup.row(types.InlineKeyboardButton("1 oy — 15,000 so'м", callback_data="vip_uz_1"))
+        markup.row(types.InlineKeyboardButton("3 oy — 20,000 so'м", callback_data="vip_uz_3"))
+        markup.row(types.InlineKeyboardButton("6 oy — 35,000 so'м", callback_data="vip_uz_6"))
     elif lang == 'ru':
         markup.row(types.InlineKeyboardButton("1 месяц — 200 руб", callback_data="vip_ru_1"))
         markup.row(types.InlineKeyboardButton("3 месяца — 250 руб", callback_data="vip_ru_3"))
@@ -146,9 +163,9 @@ def show_main_menu(chat_id, user_id):
     markup.row(t["ad_btn"])
     
     if user_id == ADMIN_ID:
-        markup.row(t["stats_btn"], t["status_btn"])
-        markup.row(t["add_movie_btn"], t["add_vip_movie_btn"])
-        markup.row(t["del_movie_btn"])
+        markup.row("📊 Statistika", "🤖 Bot holati")
+        markup.row("🎬 Kino qo'shish", "💎 VIP kino qo'shish")
+        markup.row("🗑 O'chirish")
         
     bot.send_message(chat_id, t["menu"], reply_markup=markup)
 
@@ -250,17 +267,10 @@ def ad_info(m):
     bot.send_message(m.chat.id, get_setting('ad_text'), parse_mode="Markdown")
 
 @bot.message_handler(func=lambda m: m.from_user.id == ADMIN_ID and m.text in [
-    "📊 Statistika", "📊 Статистика", "📊 Statistics",
-    "🎬 Kino qo'shish", "🎬 Добавить фильм", "🎬 Add Movie",
-    "💎 VIP kino qo'shish", "💎 Добавить VIP", "💎 Add VIP",
-    "🤖 Bot holati", "🤖 Статус бота", "🤖 Bot Status",
-    "🗑 O'chirish"
+    "📊 Statistika", "🎬 Kino qo'shish", "💎 VIP kino qo'shish", "🤖 Bot holati", "🗑 O'chirish"
 ])
 def admin_actions(m):
-    lang = get_user_lang(m.from_user.id)
-    t = LANG_TEXTS[lang]
-    
-    if "Statistika" in m.text or "Статистика" in m.text or "Statistics" in m.text:
+    if m.text == "📊 Statistika":
         conn = get_db()
         c = conn.cursor()
         c.execute("SELECT COUNT(*) FROM users")
@@ -271,15 +281,15 @@ def admin_actions(m):
         m_count = c.fetchone()[0]
         conn.close()
         bot.reply_to(m, f"📊 Statistika:\n👥 Userlar: {u_count}\n💎 VIP: {v_count}\n🎬 Kinolar: {m_count}")
-    elif "Kino qo'shish" in m.text or "Добавить фильм" in m.text or "Add Movie" in m.text:
+    elif m.text == "🎬 Kino qo'shish":
         user_states[m.from_user.id] = {'state': 'waiting_for_movie', 'is_vip': 0}
         bot.reply_to(m, "🎬 Oddiy kino videosini yuboring:")
-    elif "VIP kino" in m.text or "Добавить VIP" in m.text:
+    elif m.text == "💎 VIP kino qo'shish":
         user_states[m.from_user.id] = {'state': 'waiting_for_movie', 'is_vip': 1}
         bot.reply_to(m, "💎 VIP kino videosini yuboring:")
-    elif "Bot holati" in m.text or "Статус" in m.text:
-        bot.reply_to(m, t["bot_status_ok"])
-    elif "O'chirish" in m.text:
+    elif m.text == "🤖 Bot holati":
+        bot.reply_to(m, "🤖 Bot holati: Ajoyib ishlamoqda ✅")
+    elif m.text == "🗑 O'chirish":
         user_states[m.from_user.id] = {'state': 'waiting_for_del_code'}
         bot.reply_to(m, "🗑 O'chirilishi kerak bo'lgan kino kodini yuboring:")
 
@@ -393,4 +403,6 @@ def send_movie_by_code(chat_id, user_id, code):
     bot.send_video(chat_id, video_id, caption=caption, parse_mode="Markdown")
 
 if __name__ == "__main__":
+    keep_alive()  # Serverni doimiy yoniq saqlash uchun
     bot.infinity_polling()
+    
