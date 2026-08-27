@@ -43,12 +43,7 @@ LANG_TEXTS = {
         "download_count": "⬇️ Yuklangan:",
         "vip_choose_period": "💎 **VIP Premium Obuna**\n\nMuddatni tanlang:",
         "card_info": "💳 **Karta raqami:** `6262 5701 4806 4381`\n👤 **Ism Familiya:** Obidjonova M.\n\n📥 To'lov qilib, chek rasmini shu botga yuboring!",
-        "ad_footer": (
-            "\n\n━━━━━━━━━━━━━━━━━━━━━\n"
-            "✨ **DIQQAT! KANALLAR UCHUN REKLAMA!** ✨\n"
-            "🚀 Kanalingizga obunachilar ko'paytirmoqchimisiz? Yoki sifatli majburiy obuna kanallarini ulamoqchimisiz? Biz bilan kanalingizni tezkor rivojlantiring!\n"
-            "📢 **Murojaat uchun:** @mhdnvwv"
-        )
+        "ad_footer": "\n\n━━━━━━━━━━━━━━━━━━━━━\n✨ **KANALLAR UCHUN REKLAMA!** ✨\n🚀 Kanalingizga obunachilar ko'paytiring!\n📢 **Murojaat:** @mhdnvwv"
     },
     "ru": {
         "menu": "✅ Главное меню:",
@@ -64,12 +59,7 @@ LANG_TEXTS = {
         "download_count": "⬇️ Скачано:",
         "vip_choose_period": "💎 **VIP Премиум Подписка**\n\nВыберите срок:",
         "card_info": "💳 **Номер карты:** `6262 5701 4806 4381`\n👤 **ФИО:** Obidjonova M.\n\n📥 Сделайте перевод и отправьте скриншот чека сюда!",
-        "ad_footer": (
-            "\n\n━━━━━━━━━━━━━━━━━━━━━\n"
-            "✨ **РЕКЛАМА ДЛЯ ВАШИХ КАНАЛОВ!** ✨\n"
-            "🚀 Хотите увеличить аудиторию и настроить обязательную подписку для продвижения? Размещайте рекламу у нас!\n"
-            "📢 **Для связи:** @mhdnvwv"
-        )
+        "ad_footer": "\n\n━━━━━━━━━━━━━━━━━━━━━\n✨ **РЕКЛАМА ДЛЯ ВАШИХ КАНАЛОВ!** ✨\n🚀 Увеличивайте аудиторию!\n📢 **Для связи:** @mhdnvwv"
     },
     "en": {
         "menu": "✅ Main menu:",
@@ -85,12 +75,7 @@ LANG_TEXTS = {
         "download_count": "⬇️ Downloads:",
         "vip_choose_period": "💎 **VIP Premium Subscription**\n\nSelect period:",
         "card_info": "💳 **Card Number:** `6262 5701 4806 4381`\n👤 **Name:** Obidjonova M.\n\n📥 Make the payment and send the receipt screenshot here!",
-        "ad_footer": (
-            "\n\n━━━━━━━━━━━━━━━━━━━━━\n"
-            "✨ **CHANNEL PROMOTION & ADS!** ✨\n"
-            "🚀 Want to grow your channel subscribers or set up mandatory channel subscriptions? Boost your reach with us!\n"
-            "📢 **Contact:** @mhdnvwv"
-        )
+        "ad_footer": "\n\n━━━━━━━━━━━━━━━━━━━━━\n✨ **CHANNEL PROMOTION!** ✨\n🚀 Boost your reach with us!\n📢 **Contact:** @mhdnvwv"
     }
 }
 
@@ -218,7 +203,7 @@ def inline_vip_menu(call):
 @bot.callback_query_handler(func=lambda call: call.data == 'btn_ad_info')
 def inline_ad_info(call):
     bot.answer_callback_query(call.id)
-    bot.send_message(call.message.chat.id, "📢 **Reklama berish va kanal rivojlantirish uchun:**\n\nMurojaat uchun lichkamiz: @mhdnvwv", parse_mode="Markdown")
+    bot.send_message(call.message.chat.id, "📢 **Reklama va kanal rivojlantirish uchun:**\n\nMurojaat uchun lichkamiz: @mhdnvwv", parse_mode="Markdown")
 
 @bot.message_handler(func=lambda m: m.text in ["🌐 Tilni o'zgartirish", "🌐 Сменить язык", "🌐 Language"])
 def change_lang_btn(m):
@@ -277,7 +262,7 @@ def admin_vip_decision(call):
         bot.send_message(user_id, "🎉 Tabriklaymiz! VIP obunangiz faollashdi! ✅")
         
         markup = types.InlineKeyboardMarkup()
-        markup.row(types.InlineKeyboardButton("❌ Bekor qilish (Revoke)", callback_data=f"revoke_vip_{user_id}"))
+        markup.row(types.InlineKeyboardButton("❌ Bekor qilish", callback_data=f"revoke_vip_{user_id}"))
         bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, caption=call.message.caption + "\n\n✅ QABUL QILINGAN", reply_markup=markup)
     
     elif action == 'revoke':
@@ -294,11 +279,11 @@ def admin_vip_decision(call):
             types.InlineKeyboardButton("✅ Tasdiqlash", callback_data=f"accept_vip_{user_id}"),
             types.InlineKeyboardButton("❌ Rad etish", callback_data=f"reject_vip_{user_id}")
         )
-        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, caption=call.message.caption.replace("\n\n✅ QABUL QILINGAN", "") + "\n\n❌ BEKOR QILINGAN (Qayta ko'rib chiqilyapti)", reply_markup=markup)
+        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, caption=call.message.caption.replace("\n\n✅ QABUL QILINGAN", "") + "\n\n❌ BEKOR QILINGAN", reply_markup=markup)
 
     else:
         bot.answer_callback_query(call.id, "Rad etildi ❌")
-        bot.send_message(user_id, "❌ To'lov chekingiz rad etildi. Savollar bo'lsa @mhdnvwv ga yozing.")
+        bot.send_message(user_id, "❌ To'lov chekingiz rad etildi.")
         bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id, caption=call.message.caption + "\n\n❌ RAD ETILGAN")
 
 @bot.message_handler(func=lambda m: m.text in ["📢 Reklama", "📢 Реклама", "📢 Ads"])
@@ -337,9 +322,9 @@ def admin_stats(m):
         "📊 **Bot Statistikasi:**\n\n"
         f"👥 Jami kirganlar: {total_users}\n"
         f"🟢 Hozirda botda borlar: {active_users}\n"
-        f"🔴 Chiqib ketganlar (bloklaganlar): {left_users}\n"
+        f"🔴 Chiqib ketganlar: {left_users}\n"
         f"🎬 Kinolar soni: {movies_count}\n"
-        f"💎 VIP obuna sotib olganlar: {vip_users}"
+        f"💎 VIP obunachilar: {vip_users}"
     )
     bot.reply_to(m, text, parse_mode="Markdown")
 
@@ -387,7 +372,7 @@ def remove_channel_callback(call):
     conn.commit()
     conn.close()
     bot.answer_callback_query(call.id, "O'chirildi ✅")
-    bot.edit_message_text("🗑 Tanlangan majburiy kanal muvaffaqiyatli o'chirildi!", call.message.chat.id, call.message.message_id)
+    bot.edit_message_text("🗑 Tanlangan majburiy kanal o'chirildi!", call.message.chat.id, call.message.message_id)
 
 @bot.message_handler(func=lambda m: m.from_user.id == ADMIN_ID and m.text in ["🎬 Kino qo'shish", "💎 VIP kino qo'shish"])
 def admin_add_movie(m):
@@ -411,7 +396,7 @@ def get_movie_code(m):
               (code, data.get('video_id'), data.get('is_vip', 0)))
     conn.commit()
     conn.close()
-    bot.reply_to(m, f"🎉 Kino muvaffaqiyatli saqlandi! Kodi: `{code}`", parse_mode="Markdown")
+    bot.reply_to(m, f"🎉 Kino saqlandi! Kodi: `{code}`", parse_mode="Markdown")
     user_states[m.from_user.id] = {}
 
 @bot.message_handler(func=lambda m: m.text in ["🎲 Tasodifiy", "🎲 Случайный", "🎲 Random"])
@@ -453,4 +438,13 @@ def search(m):
     bot.send_message(m.chat.id, LANG_TEXTS[lang]["search_prompt"])
 
 EXCLUDED_BTNS = [
-    "📊 Statistika", "🎲 Tasodifiy", "🎲 Слу
+    "📊 Statistika", "🎲 Tasodifiy", "🎲 Случайный", "🎲 Random",
+    "🔍 Qidirish", "🔍 Поиск", "🔍 Search", "💎 Premium Obuna", "💎 VIP Подписка", "💎 VIP Subscription",
+    "📢 Reklama", "📢 Реклама", "📢 Ads", "🌐 Tilni o'zgartirish", "🌐 Сменить язык", "🌐 Language",
+    "⚙️ Nastroyka (Admin)", "⚙️ Настройки (Админ)", "⚙️ Settings (Admin)",
+    "➕ Majburiy obuna qo'shish", "🗑 Majburiy obunani o'chirish", "🎬 Kino qo'shish", "💎 VIP kino qo'shish", "⬅️ Asosiy menyu"
+]
+
+@bot.message_handler(func=lambda m: m.text and not m.text.startswith('/') and m.text not in EXCLUDED_BTNS)
+def handle_text_codes(message):
+    send_movie_by_code(message.chat.id, message.from_user
